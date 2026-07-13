@@ -18,7 +18,14 @@ function parseIntent(text) {
   return 'newcar';
 }
 function exLakh(text) { const m = text.match(/(\d+(?:\.\d+)?)\s?lakh/); return m ? +m[1] : null; }
-function brandOf(text) { const m = text.match(/maruti|suzuki|toyota|honda|hyundai|tata|mahindra|kia|volkswagen|skoda|ford|renault|nissan|mg|citroen/i); return m ? m[0].toLowerCase() : null; }
+function brandOf(text) {
+  const m = text.match(/maruti|suzuki|toyota|honda|hyundai|tata|mahindra|kia|volkswagen|skoda|ford|renault|nissan|mg|citroen/i);
+  if (m) return m[0].toLowerCase();
+  const model = text.toLowerCase();
+  const MAP = { fortuner:'toyota', innova:'toyota', creta:'hyundai', i20:'hyundai', venue:'hyundai', swift:'maruti', baleno:'maruti', brezza:'maruti', city:'honda', amaze:'honda', nexon:'tata', punch:'tata', seltos:'kia', xuv:'mahindra', scorpio:'mahindra', escort:'ford' };
+  for (const k in MAP) if (model.includes(k)) return MAP[k];
+  return null;
+}
 
 function run(text, channel = 'whatsapp', locale = 'en') {
   const L = I18N[locale] || I18N.en;
