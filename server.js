@@ -48,7 +48,13 @@ const server = http.createServer(async (req, res) => {
     if (!authOk()) return send(res, 401, { error: 'unauthorized' });
     const b = await body();
     if (!b.brand || !b.model || !b.price) return send(res, 400, { error: 'need brand, model, price' });
-    return send(res, 200, { id: DB.addCar(b).lastInsertRowid });
+    const newId = DB.addCar(b).lastInsertRowid;
+    // Integration: notify Reels Agent to auto-generate a marketing reel.
+    fetch('http://localhost:8098/api/car-added', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: newId, brand: b.brand, model: b.model, year: b.year, price: b.price, fuel: b.fuel, city: b.city })
+    }).catch(() => {});
+    return send(res, 200, { id: newId });
   }
   if (req.method === 'POST' && url.pathname === '/api/cars/delete') {
     if (!authOk()) return send(res, 401, { error: 'unauthorized' });
