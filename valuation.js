@@ -60,10 +60,28 @@ function matchStock({ brand, model, budgetLakh, fuel }) {
   return list.sort((a, b) => a.price - b.price);
 }
 function addStock(car) { const c = { id: 'C' + String(INVENTORY.length + 1).padStart(3, '0'), ...car }; INVENTORY.push(c); return c; }
+// EMI estimate: 20% down, 9.5% p.a., 36 months.
 function emi(principalLakh, months = 36, rate = 9.5) {
   const p = principalLakh * 1e5; const r = rate / 12 / 100;
-  const emi = p * r * Math.pow(1 + r, months) / (Math.pow(1 + r, months) - 1);
-  return { emi: Math.round(emi), total: Math.round(emi * months), down: Math.round(p * 0.2) };
+  const e = p * r * Math.pow(1 + r, months) / (Math.pow(1 + r, months) - 1);
+  return { emi: Math.round(e), total: Math.round(e * months), down: Math.round(p * 0.2) };
+}
+// On-road price for a NEW car (India): ex-showroom + RTO + insurance + TCS.
+function onRoad(exShowroomLakh, state = 'GJ') {
+  const ex = exShowroomLakh * 1e5;
+  const rto = ex * 0.09;           // ~9% RTO (varies by state)
+  const ins = ex * 0.04;           // ~4% 1st-yr insurance
+  const tcs = ex * 0.01;           // 1% TCS over 10L
+  const total = ex + rto + ins + tcs;
+  return { ex, rto: Math.round(rto), ins: Math.round(ins), tcs: Math.round(tcs), total: Math.round(total), totalLakh: +(total / 1e5).toFixed(2) };
+}
+// Exchange: value old car, apply as down-payment credit toward new on-road.
+function exchange(oldCar, newExShowroomLakh) {
+  const ov = valueCar(oldCar).value;
+  const nr = onRoad(newExShowroomLakh);
+  const net = nr.total - ov;
+  const emiCalc = net > 0 ? emi(net / 1e5) : { emi: 0, down: 0, total: 0 };
+  return { oldValue: ov, newOnRoad: nr.total, netPayable: Math.max(0, net), emi: emiCalc };
 }
 
-module.exports = { valueCar, matchStock, addStock, emi, INVENTORY: () => INVENTORY };
+module.exports = { valueCar, matchStock, addStock, emi, onRoad, exchange, INVENTORY: () => INVENTORY };

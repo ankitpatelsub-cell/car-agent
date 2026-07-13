@@ -1,24 +1,28 @@
-// test.js — smoke tests for the Car Dealership Assistant.
+// test.js — smoke tests for the Car Dealership Assistant (new-car primary).
 const assert = require('assert');
 const { run, parseIntent } = require('./agent-core');
 const V = require('./valuation');
 
 (async () => {
-  assert(parseIntent('value my Maruti Swift') === 'sell', 'sell intent');
-  assert(parseIntent('I want Honda City 5 lakh') === 'buy', 'buy intent');
-  assert(parseIntent('EMI for 6 lakh') === 'finance', 'finance intent');
+  assert(parseIntent('on-road price of 8 lakh car') === 'newcar', 'newcar intent');
+  assert(parseIntent('exchange my 2019 Maruti 50000 km for new') === 'exchange', 'exchange intent');
+  assert(parseIntent('used car under 6 lakh') === 'used', 'used intent');
 
-  const r = run('value my 2020 Maruti Swift 40000 km', 'whatsapp', 'en');
-  assert(r.steps.some(s => s.tool === 'value'), 'should value');
-  console.log('✓ valuation:', r.steps.find(s => s.tool === 'value').result.slice(0, 50));
+  const o = run('on-road price of Hyundai i20 8 lakh', 'whatsapp', 'en');
+  assert(o.steps.some(s => s.tool === 'onroad'), 'should quote on-road');
+  console.log('✓ on-road:', o.steps.find(s => s.tool === 'onroad').result.slice(0, 55));
 
-  const b = run('I want Honda City, 5 lakh budget', 'whatsapp', 'hi');
-  assert(r.intent === 'sell' && b.intent === 'buy', 'intents differ');
-  console.log('✓ buy match (hi):', b.steps.find(s => s.tool === 'match').result.slice(0, 50));
+  const x = run('exchange my 2019 Maruti Swift 50000 km for new 8 lakh car', 'whatsapp', 'hi');
+  assert(x.intent === 'exchange', 'exchange routed');
+  console.log('✓ exchange (hi):', x.steps.find(s => s.tool === 'exchange').result.slice(0, 55));
 
-  const v = V.valueCar({ brand: 'toyota', years: 3, km: 60000, exShowroomLakh: 12 });
-  assert(v.value > 0, 'value positive');
-  console.log('✓ valuation math ok (Toyota 3y:', '₹' + (v.value / 1e5).toFixed(2) + 'L)');
+  const u = run('used car under 6 lakh honda', 'whatsapp', 'en');
+  assert(u.steps.some(s => s.tool === 'used'), 'used section works');
+  console.log('✓ used section:', u.steps.find(s => s.tool === 'used').result.slice(0, 45));
+
+  const or = V.onRoad(8);
+  assert(or.totalLakh > 8 && or.totalLakh < 10, 'on-road > ex-showroom');
+  console.log('✓ on-road math ok (8L ex → ₹' + or.totalLakh + 'L)');
 
   console.log('\nALL CAR AGENT TESTS PASSED');
   process.exit(0);
