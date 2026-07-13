@@ -1,0 +1,8 @@
+{
+  "name": "car-agent",
+  "version": "3.0.0",
+  "description": "Car Dealership Assistant — new-car primary, SQLite-backed, with customer site + staff admin",
+  "main": "server.js",
+  "scripts": { "start": "node server.js", "test": "node test.js" },
+  "dependencies": { "better-sqlite3": "^11.0.0" }
+}

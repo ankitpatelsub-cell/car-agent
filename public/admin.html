@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta http-equiv="Cache-Control" content="no-store" />
+<title>Shree Auto — Staff Admin</title>
+<style>
+  :root{--ink:#16263a;--blue:#1f5fae;--bg:#f6f8fb;--card:#fff;--muted:#5b6b7d;--line:#e3e9f0;--green:#2e9e5b}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,system-ui,sans-serif;color:var(--ink);background:var(--bg);line-height:1.5}
+  header{background:var(--ink);color:#fff;padding:14px 18px;display:flex;justify-content:space-between}
+  header a{color:#fff;text-decoration:none;background:rgba(255,255,255,.15);padding:6px 12px;border-radius:8px;font-size:13px}
+  .wrap{max-width:1000px;margin:0 auto;padding:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px}
+  input{width:100%;border:1px solid var(--line);border-radius:8px;padding:9px;margin-top:5px;font-family:inherit}
+  .row{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  button{padding:10px 14px;border:none;border-radius:8px;font-weight:700;cursor:pointer}
+  .add{background:var(--green);color:#fff;margin-top:10px}
+  .del{background:#fde2e2;color:#c0392b;padding:4px 8px;font-size:12px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:6px;border-bottom:1px solid var(--line)}
+  h3{color:var(--muted);font-size:14px;margin-bottom:6px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+</style>
+</head>
+<body>
+<header><div>🚗 Shree Auto — Staff Admin</div><a href="/">← Customer site</a></header>
+<div class="wrap">
+  <div class="card">
+    <h3>Add car to stock</h3>
+    <div class="row">
+      <input id="brand" placeholder="brand (maruti)"><input id="model" placeholder="model (Swift)">
+      <input id="year" placeholder="year" type="number"><input id="fuel" placeholder="fuel"><input id="km" placeholder="km" type="number">
+      <input id="price" placeholder="price ₹" type="number"><input id="city" placeholder="city">
+    </div>
+    <button class="add" onclick="addCar()">+ Add car</button>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>Stock</h3><div id="cars"></div></div>
+    <div class="card"><h3>Leads</h3><div id="leads"></div></div>
+  </div>
+  <div class="card"><h3>Test-drive / bookings</h3><div id="bookings"></div></div>
+</div>
+<script>
+async function load(){
+  const cars=await fetch('/api/cars').then(r=>r.json());
+  document.getElementById('cars').innerHTML='<table>'+cars.map(c=>`<tr><td>#${c.id}</td><td>${c.brand} ${c.model}</td><td>${c.year}</td><td>${c.fuel}</td><td>${c.km}km</td><td>₹${(c.price/1e5).toFixed(2)}L</td><td><button class="del" onclick="delCar(${c.id})">sold</button></td></tr>`).join('')+'</table>';
+  const leads=await fetch('/api/leads').then(r=>r.json());
+  document.getElementById('leads').innerHTML=leads.map(l=>`<div style="font-size:13px;padding:4px 0;border-bottom:1px solid var(--line)"><b>${l.intent}</b> · ${l.text.slice(0,50)} <small style="color:var(--muted)">(${l.channel})</small></div>`).join('')||'—';
+  const bk=await fetch('/api/bookings').then(r=>r.json());
+  document.getElementById('bookings').innerHTML=bk.map(b=>`<div style="font-size:13px;padding:4px 0;border-bottom:1px solid var(--line)">${b.text.slice(0,60)} <small style="color:var(--muted)">[${b.status}]</small></div>`).join('')||'—';
+}
+async function addCar(){ const b={brand:brand.value,model:model.value,year:+year.value,fuel:fuel.value,km:+km.value,price:+price.value,city:city.value||'Ahmedabad'};
+  if(!b.brand||!b.model||!b.price)return alert('brand, model, price required');
+  await fetch('/api/cars',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
+  [brand,model,year,fuel,km,price,city].forEach(i=>i.value=''); load(); }
+async function delCar(id){ await fetch('/api/cars/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})}); load(); }
+load();
+</script>
+</body>
+</html>
