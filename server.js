@@ -58,6 +58,21 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && url.pathname === '/api/bookings') { if (!authOk()) return send(res, 401, { error: 'unauthorized' }); return send(res, 200, DB.bookings()); }
   if (req.method === 'GET' && url.pathname === '/api/state') return send(res, 200, { cars: DB.allCars().length, leads: DB.leads().length, bookings: DB.bookings().length });
 
+  // Structured lead capture (no auth — public forms write to DB).
+  if (req.method === 'POST' && url.pathname === '/api/test-drive') {
+    const b = await body();
+    if (!b.name || !b.phone) return send(res, 400, { error: 'need name + phone' });
+    DB.addBooking({ text: `TD request: ${b.name} ${b.phone} ${b.car || ''}`, channel: 'web', status: 'booked' });
+    DB.addLead({ text: `test-drive ${b.name} ${b.car || ''}`, channel: 'web', intent: 'testdrive', locale: b.locale || 'en', status: 'new' });
+    return send(res, 200, { ok: true, msg: 'Test-drive requested. Executive will call you.' });
+  }
+  if (req.method === 'POST' && url.pathname === '/api/valuation-lead') {
+    const b = await body();
+    if (!b.phone) return send(res, 400, { error: 'need phone' });
+    DB.addLead({ text: `valuation ${b.brand || ''} ${b.year || ''} ${b.km || ''} by ${b.name || 'anon'}`, channel: 'web', intent: 'exchange', locale: b.locale || 'en', status: 'hot' });
+    return send(res, 200, { ok: true, msg: 'We will send your car valuation shortly.' });
+  }
+
   // Pages
   let p = url.pathname === '/' ? '/index.html' : url.pathname;
   if (url.pathname.startsWith('/admin')) p = '/admin.html';

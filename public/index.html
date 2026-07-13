@@ -106,6 +106,29 @@
   <div class="grid" id="cars"></div>
 </div>
 
+<div class="wrap">
+  <div class="section-title"><h2>📋 Quick actions</h2></div>
+  <div class="grid">
+    <div class="card" style="padding:18px">
+      <h3 style="color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.6px">Book a test-drive</h3>
+      <input class="f" id="td-name" placeholder="Your name" style="width:100%;margin-top:8px">
+      <input class="f" id="td-phone" placeholder="Phone (+91...)" style="width:100%;margin-top:8px">
+      <input class="f" id="td-car" placeholder="Car interested in (optional)" style="width:100%;margin-top:8px">
+      <button class="go" style="width:100%" onclick="bookTD()">Request call</button>
+      <div id="td-msg" style="font-size:13px;color:var(--green);margin-top:8px"></div>
+    </div>
+    <div class="card" style="padding:18px">
+      <h3 style="color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.6px">Value your car (exchange)</h3>
+      <input class="f" id="v-brand" placeholder="Brand (e.g. Maruti)" style="width:100%;margin-top:8px">
+      <input class="f" id="v-year" placeholder="Year" style="width:100%;margin-top:8px">
+      <input class="f" id="v-km" placeholder="Km driven" style="width:100%;margin-top:8px">
+      <input class="f" id="v-phone" placeholder="Phone" style="width:100%;margin-top:8px">
+      <button class="go" style="width:100%" onclick="valLead()">Get valuation</button>
+      <div id="v-msg" style="font-size:13px;color:var(--green);margin-top:8px"></div>
+    </div>
+  </div>
+</div>
+
 <footer class="wrap">Shree Auto · Ahmedabad · Powered by Nihon Offshore AI · Demo</footer>
 
 <script>
@@ -129,6 +152,18 @@ async function ask(t){ if(!t.trim())return;
   document.getElementById('res').innerHTML='<div class="answer">'+d.steps.map(s=>`<div class="step"><span class="tag">${s.tool}</span><span>${s.result}</span></div>`).join('')+'</div>';
 }
 load();
+async function bookTD(){
+  const b={name:td-name.value,phone:td-phone.value,car:td-car.value};
+  if(!b.name||!b.phone)return alert('name + phone required');
+  const r=await fetch('/api/test-drive',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
+  const d=await r.json(); td-msg.textContent=d.msg||'done'; [td-name,td-phone,td-car].forEach(i=>i.value='');
+}
+async function valLead(){
+  const b={brand:v-brand.value,year:v-year.value,km:v-km.value,phone:v-phone.value};
+  if(!b.phone)return alert('phone required');
+  const r=await fetch('/api/valuation-lead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
+  const d=await r.json(); v-msg.textContent=d.msg||'done'; [v-brand,v-year,v-km,v-phone].forEach(i=>i.value='');
+}
 </script>
 </body>
 </html>
