@@ -63,6 +63,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && url.pathname === '/api/leads') { if (!authOk()) return send(res, 401, { error: 'unauthorized' }); return send(res, 200, DB.leads()); }
   if (req.method === 'GET' && url.pathname === '/api/bookings') { if (!authOk()) return send(res, 401, { error: 'unauthorized' }); return send(res, 200, DB.bookings()); }
   if (req.method === 'GET' && url.pathname === '/api/state') return send(res, 200, { cars: DB.allCars().length, leads: DB.leads().length, bookings: DB.bookings().length });
+  if (req.method === 'GET' && url.pathname === '/api/overview') return send(res, 200, { cars: DB.allCars().length, leads: DB.leads().length, bookings: DB.bookings().length });
 
   // Structured lead capture (no auth — public forms write to DB).
   if (req.method === 'POST' && url.pathname === '/api/test-drive') {
