@@ -8,15 +8,15 @@ const V = require('./valuation');
   assert(parseIntent('exchange my 2019 Maruti 50000 km for new') === 'exchange', 'exchange intent');
   assert(parseIntent('used car under 6 lakh') === 'used', 'used intent');
 
-  const o = run('on-road price of Hyundai i20 8 lakh', 'whatsapp', 'en');
+  const o = await run('on-road price of Hyundai i20 8 lakh', 'whatsapp', 'en');
   assert(o.steps.some(s => s.tool === 'onroad'), 'should quote on-road');
   console.log('✓ on-road:', o.steps.find(s => s.tool === 'onroad').result.slice(0, 55));
 
-  const x = run('exchange my 2019 Maruti Swift 50000 km for new 8 lakh car', 'whatsapp', 'hi');
+  const x = await run('exchange my 2019 Maruti Swift 50000 km for new 8 lakh car', 'whatsapp', 'hi');
   assert(x.intent === 'exchange', 'exchange routed');
   console.log('✓ exchange (hi):', x.steps.find(s => s.tool === 'exchange').result.slice(0, 55));
 
-  const u = run('used car under 6 lakh honda', 'whatsapp', 'en');
+  const u = await run('used car under 6 lakh honda', 'whatsapp', 'en');
   assert(u.steps.some(s => s.tool === 'used'), 'used section works');
   console.log('✓ used section:', u.steps.find(s => s.tool === 'used').result.slice(0, 45));
 
