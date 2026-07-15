@@ -50,6 +50,18 @@
     <div class="card"><h3>Leads</h3><div id="leads" style="max-height:340px;overflow:auto"></div></div>
   </div>
   <div class="card"><h3>Test-drive / bookings</h3><div id="bookings"></div></div>
+  <div class="card"><h3>🧠 Model Settings <span style="font-weight:400;text-transform:none;color:var(--muted)">· live switch</span></h3>
+    <div id="provBtns" style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="add" style="background:#1f5fae;margin-top:0" onclick="setProv('claude')">Claude (free)</button>
+      <button class="add" style="background:#1f5fae;margin-top:0" onclick="setProv('auto')">Auto (failover)</button>
+      <button class="add" style="background:#1f5fae;margin-top:0" onclick="setProv('openrouter')">OpenRouter</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px;align-items:center">
+      <input id="orModel" placeholder="OpenRouter model (e.g. anthropic/claude-sonnet-4)" style="flex:1">
+      <button class="add" style="margin-top:0" onclick="saveProv()">Save</button>
+    </div>
+    <div id="provInfo" style="font-size:12px;color:var(--muted);margin-top:10px"></div>
+  </div>
 </div>
 <div id="login"><div class="box">
   <h3>Staff login</h3>
@@ -78,7 +90,13 @@ async function addCar(){ const b={brand:brand.value,model:model.value,year:+year
   const r=await fetch('/api/cars',{method:'POST',headers:authH(),body:JSON.stringify(b)}); if(r.status===401)return alert('login expired');
   [brand,model,year,fuel,km,price,city].forEach(i=>i.value=''); load(); }
 async function delCar(id){ await fetch('/api/cars/delete',{method:'POST',headers:authH(),body:JSON.stringify({id})}); load(); }
-if(TOKEN) load();
+async function setProv(p){ const r=await fetch('/api/set-provider',{method:'POST',headers:authH(),body:JSON.stringify({provider:p})}); const s=await r.json(); renderProv(s); }
+async function saveProv(){ const m=document.getElementById('orModel').value.trim(); const cur=document.getElementById('provInfo').dataset.p||'claude'; const r=await fetch('/api/set-provider',{method:'POST',headers:authH(),body:JSON.stringify({provider:cur,openrouter_model:m})}); const s=await r.json(); renderProv(s); }
+async function renderProv(s){ document.getElementById('provInfo').dataset.p=s.provider;
+  document.getElementById('provInfo').innerHTML=`Provider: <b>${s.provider}</b> · Claude CLI: ${s.claude_cli?'✅':'❌'} · OpenRouter key: ${s.openrouter_key==='set'?'✅ set':'⚠️ missing'}${s.openrouter_model?` · model: <code>${s.openrouter_model}</code>`:''}<br/>Auto mode fails over Claude↔OpenRouter on token/rate-limit.`;
+  if(s.openrouter_model) document.getElementById('orModel').value=s.openrouter_model;
+  document.querySelectorAll('#provBtns button').forEach(b=>b.style.outline = (b.textContent.toLowerCase().includes(s.provider))?'3px solid #1ba672':'none'); }
+if(TOKEN){ load(); fetch('/api/settings',{headers:authH()}).then(r=>r.json()).then(renderProv).catch(()=>{}); }
 </script>
 </body>
 </html>
