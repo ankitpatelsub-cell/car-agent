@@ -1,6 +1,11 @@
 // agent-core.js — Car Dealership Assistant (DB-driven, new-car primary).
+// Brain: fast rule-based intent by default. Optional LLM enhancer via shared
+// llm_bridge (MODEL_PROVIDER=claude|openrouter|auto) for free-text parsing + natural reply.
 const DB = require('./db');
 const V = require('./valuation');
+let complete = null;
+try { complete = require('/root/shared/llm_bridge').complete; } catch { /* optional */ }
+
 const I18N = {
   en: { think: 'analyzing', newcar: 'New car on-road', exchange: 'Exchange offer', used: 'Used-car section', td: 'Test-drive booked', fin: 'EMI estimate', docs: 'RC/paperwork', follow: 'Follow-up scheduled', offer: 'Current offers' },
   hi: { think: 'विश्लेषण', newcar: 'नई कार ऑन-रोड', exchange: 'एक्सचेंज ऑफर', used: 'पुरानी कार सेक्शन', td: 'टेस्ट-ड्राइव बुक', fin: 'EMI अनुमान', docs: 'कागज़ात', follow: 'फॉलो-अप', offer: 'चालू ऑफर' },
@@ -27,12 +32,30 @@ function brandOf(text) {
   return null;
 }
 
-function run(text, channel = 'whatsapp', locale = 'en') {
-  const L = I18N[locale] || I18N.en;
-  const intent = parseIntent(text);
-  const steps = [{ tool: 'think', result: '(' + L.think + ') ' + channel + ' → intent: ' + intent }];
-  const ex = exLakh(text);
+// Optional LLM enhancer: parse free text into structured fields via local Claude CLI
+// (free) or OpenRouter. Returns { intent, brand, year, km, budget } or null.
+async function enhanceWithLLM(text) {
+  if (!complete) return null;
+  const provider = (process.env.MODEL_PROVIDER || 'auto').toLowerCase();
+  if (provider === 'openrouter' && !process.env.OPENROUTER_API_KEY) return null;
+  try {
+    const r = await complete(`Extract from this car-customer message as JSON only: {"intent":"newcar|exchange|used|finance|offer|testdrive|docs", "brand":"", "year":"", "km":"", "budget_lakh":""}. Use "" if missing. Message: ${text}`, { model: 'sonnet' });
+    if (r.ok) {
+      const m = r.text.match(/\{[\s\S]*\}/);
+      if (m) return JSON.parse(m[0]);
+    }
+  } catch {}
+  return null;
+}
 
+async function run(text, channel = 'whatsapp', locale = 'en') {
+  const L = I18N[locale] || I18N.en;
+  let intent = parseIntent(text);
+  // Optional LLM enhancer (free local Claude) to improve extraction on messy text.
+  const enh = await enhanceWithLLM(text).catch(() => null);
+  if (enh && enh.intent) intent = enh.intent;
+  const steps = [{ tool: 'think', result: '(' + L.think + ') ' + channel + ' → intent: ' + intent + (enh ? ' (LLM-enhanced)' : '') }];
+  const ex = exLakh(text) || (enh && enh.budget_lakh ? +enh.budget_lakh : null);
   if (intent === 'newcar') {
     const brand = brandOf(text);
     if (ex) {

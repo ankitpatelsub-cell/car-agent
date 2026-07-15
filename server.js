@@ -36,7 +36,7 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === 'POST' && url.pathname === '/api/chat') {
     const b = await body(); if (!b.text) return send(res, 400, { error: 'no text' });
-    return send(res, 200, run(b.text, b.channel || 'whatsapp', b.locale || 'en'));
+    return send(res, 200, await run(b.text, b.channel || 'whatsapp', b.locale || 'en'));
   }
   if (req.method === 'GET' && url.pathname === '/api/cars') {
     const brand = url.searchParams.get('brand'); const budget = url.searchParams.get('budget');
